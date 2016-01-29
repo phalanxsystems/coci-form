@@ -1,0 +1,101 @@
+(ns workflow.form
+  (:require
+   [castra.core   :as castra]
+   [clojure.walk  :as walk]
+   [clojure.data  :as data]))
+
+;; Form data manager ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- reset-vals!
+  [map-of-cells default]
+  (doseq [v (vals map-of-cells)]
+    (reset! v default)))
+
+(defn- set-error-cells!
+  [promise {:keys [error state exception]}]
+  (.always promise #(let [e (ex-data %)]
+                      (reset! exception (ex-message %))
+                      (doseq [[k v] error]
+                        (let [err (get e k)]
+                          (reset! v (or err "")))))))
+
+(defprotocol IFormMachine
+  (submit   [this])
+  (validate [this])
+  (reset    [this]))
+
+(defrecord FormMachine
+  [data error action callback state exception loading diff dirty?]
+
+  IDeref
+  (-deref [this]
+    (->> data (reduce (fn [xs [k v]] (assoc xs k @v)) {})))
+
+  IFormMachine
+  (submit [this]
+    (swap! loading inc)
+    (-> (action @this)
+        (set-error-cells! this)
+        (.fail #(reset! state :error))
+        (.done #(callback this))
+        (.always #(swap! loading dec))))
+  (validate [this]
+    (when (#{:error :no-error} @state)
+      (binding [castra/*validate-only* true]
+        (-> (action @this)
+            (set-error-cells! this)
+            (.fail #(reset! state :error))
+            (.done #(reset! state :no-error))))))
+  (reset [this]
+    (with-let [_ this]
+      (reset! exception nil)
+      (reset! state :incomplete)
+      (reset-vals! data ::nil)
+      (reset-vals! error nil))))
+
+(defn- form-data-cell
+  [k default current]
+  (let [store (cell ::nil)]
+    (cell= (let [v (get current k)]
+             (cond (not= ::nil store) store
+                   (not (nil? v))     v
+                   :else              default))
+           (partial reset! store))))
+
+(defn- data-map
+  [schema current]
+  (reduce (fn [xs [k v]] (assoc xs k (form-data-cell k v current))) {} schema))
+
+(defn- error-map
+  [schema]
+  (reduce (fn [xs [k v]] (assoc xs k (cell nil))) {} schema))
+
+(defn- prep-diff
+  [x]
+  (walk/prewalk #(when (not= % "") %) x))
+
+(defn- diff-cell
+  [schema current data]
+  (->> (cons current (vals data))
+       (apply (formula (fn [curr & vs]
+                         (let [ks  (keys data)
+                               new (prep-diff (zipmap ks vs))
+                               old (prep-diff (select-keys curr ks))]
+                           (when (seq old) (data/diff old new))))))))
+
+(defn form-machine
+  [& {:keys [action schema current success]}]
+  (let [data (data-map schema current)
+        diff (diff-cell schema current data)
+        this {:data      data
+              :error     (error-map schema)
+              :action    action
+              :callback  (or success (fn [& _]))
+              :state     (cell :incomplete)
+              :exception (cell nil)
+              :loading   (cell 0)
+              :diff      diff
+              :dirty?    (cell= (not-every? nil? (take 2 diff)))}]
+    (with-let [this (map->FormMachine this)]
+      (add-watch current (gensym) #(reset this))
+      (add-watch diff    (gensym) #(validate this)))))

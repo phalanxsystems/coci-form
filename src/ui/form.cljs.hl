@@ -1,0 +1,141 @@
+(ns ui.form
+  (:refer-hoplon :exclude [select input textarea label])
+  (:require [ui.form.input :as input]
+            [workflow.form :as workflow])
+  (:require-macros [ui.form :refer [definput]]))
+
+(def ^:dynamic *form-machine*   nil)
+(def ^:dynamic *form-state*     nil)
+(def ^:dynamic *form-loading*   nil)
+(def ^:dynamic *form-errors*    nil)
+(def ^:dynamic *form-inputs*    nil)
+(def ^:dynamic *form-exception* nil)
+(def ^:dynamic *input-error*    nil)
+(def ^:dynamic *input-data*     nil)
+(def ^:dynamic *input-name*     nil)
+
+(defelem label
+  [{:keys [for] :as attr} kids]
+  (let [for (or for *input-name*)
+        attr (assoc attr :for for)]
+    (hoplon.core/label attr kids)))
+
+(definput select
+  [attr kids]
+  (div :class "select"
+    (input/select :class "form-control" attr kids)))
+
+(definput text-input
+  [attr _]
+  (input/input :type "text" :class "form-control" attr))
+
+(definput file-input
+  [attr _]
+  (input/input :type "file" :class "form-control" attr))
+
+(definput hidden-input [attr _]
+  (input/input :type "hidden" attr))
+
+(definput number-input
+  [attr _]
+  (input/input :type "number" :class "form-control" attr))
+
+(definput textarea
+  [attr _]
+  (input/textarea :class "form-control" attr))
+
+(definput password-input
+  [attr _]
+  (input/input :type "password" :class "form-control" attr))
+
+(defelem checkbox-block
+  [{:keys [state disabled] :as attr} kids]
+  (let [state (or state  *input-data*)]
+    (div :class "checkbox"
+      (hoplon.core/label (dissoc attr :state)
+        (span :class "switch"
+          (input/checkbox :state state :disabled disabled)
+          (i))
+        kids))))
+
+(defelem radio-block
+  [{:keys [state value disabled] :as attr} kids]
+  (let [state (or state  *input-data*)]
+    (div :class "checkbox"
+      (hoplon.core/label (dissoc attr :state :value)
+        (span :class "switch"
+          (input/radio :state state :value value :disabled disabled)
+          (i))
+        kids))))
+
+(defelem options
+  [attr kids]
+  ((div :class "options options-large") attr kids))
+
+(defelem checkset-block
+  [{:keys [state value] :as attr} kids]
+  (let [state (or state *input-data*)]
+    (div :class "checkbox"
+      (hoplon.core/label (dissoc attr :state :value)
+        (span :class "switch"
+          (input/checkset :state state :value value) 
+          (i))
+        kids))))
+
+(defelem panel
+  [{:keys [heading] :as attr} kids]
+  ((div :class "panel panel-default") (dissoc attr :heading)
+     (div :class "panel-heading"
+       (h5 heading))
+     (div :class "panel-body" kids)))
+
+(defelem validation-field
+  [{:keys [error state] :as attr} kids]
+  (let [attr (dissoc attr :error :state)
+        state (or state *form-state*)
+        error (or error *input-error*)]
+    ((div :class (cell= {:grid        true
+                         :has-error   (and error (not= "" error))
+                         :has-success (or (= "" error) (= :no-error state))}))
+     attr kids)))
+
+(defelem validation-message
+  [{:keys [state] :as attr} _]
+  (let [state (or state *input-error*)]
+    ((p :class  "text-danger"
+        :toggle state
+        :text   state)
+     (dissoc attr :state))))
+
+(defelem validation-alert
+  [{:keys [state] :as attr} _]
+  (let [state (or state *form-exception*)]
+    ((div :class "alert alert-danger" :toggle state)
+     (dissoc attr :state) (span :text state))))
+
+#_(defelem submit-primary
+  [{:keys [state text active-text] :or {text "Save" active-text "Working..."} :as attr} kids]
+  (let [state       (or state *form-loading*)]
+    [(button/primary
+       :type "submit"
+       :toggle (cell= (= 0 state))
+       (or (seq kids) text))
+     (button/primary
+       :disabled true
+       :toggle (cell= (not= 0 state))
+       (or (seq kids) active-text))]))
+
+(defelem alert
+  [attr kids]
+  ((div :class "alert") attr kids))
+
+(defelem alert-warning
+  [attr kids]
+  ((alert :class "alert-warning") attr kids))
+
+(defelem help-block
+  [attr kids]
+  ((p :class "help-block") attr kids))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

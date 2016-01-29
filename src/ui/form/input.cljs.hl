@@ -1,0 +1,50 @@
+(ns ui.form.input
+  (:refer-hoplon :exclude (input textarea select)))
+
+(defn- field
+  [field {:keys [state] :as attr} kids]
+  (-> (dissoc attr :state)
+      (assoc :value state
+             :change #(reset! state @%)
+             :keyup  #(reset! state @%))
+      (field kids)))
+
+(defelem input    [attr kids] (field hoplon.core/input attr kids))
+(defelem textarea [attr kids] (field hoplon.core/textarea attr kids))
+(defelem select   [attr kids] (field hoplon.core/select attr kids))
+
+(defelem checkbox
+  [{:keys [state] :as attr} _]
+  (hoplon.core/input 
+    (-> (dissoc attr :state)
+        (assoc :type  "checkbox"
+               :value state
+               :click #(with-let [_ 1]
+                         (let [e (js/jQuery (.-target %))]
+                           (reset! state (.is e ":checked"))))))))
+
+(defelem checkset
+  [{:keys [state value] :as attr} _]
+  (hoplon.core/input
+    (-> (dissoc attr :state :value)
+        (assoc :type  "checkbox"
+               :value (cell= (contains? state value))
+               :click #(with-let [_ 1]
+                         (let [e (js/jQuery (.-target %))]
+                           (swap! state (fnil (if (.is e ":checked") conj disj) #{}) @value)))))))
+
+(defmethod do! :prop
+  [elem _ m]
+  (let [e (js/jQuery elem)]
+    (doseq [[k v] m :let [k (name k)]]
+      (when-not (= v (.prop e k))
+        (.prop e (name k) v)))))
+
+(defelem radio
+  [{:keys [state value] :as attr} _]
+  (let [value (cell= value)]
+    (hoplon.core/input 
+      (-> (dissoc attr :state)
+          (assoc :type  "radio"
+                 :prop  (cell= {:checked (= (str state) (str value))})
+                 :click #(do (swap! state (fn [x] (when (not= x @value) @value))) true))))))
