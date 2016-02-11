@@ -13,7 +13,7 @@
 
 
 (task-options!
-  pom    {:project 'coci-form
+  pom    {:project 'coci/coci-form
           :version "0.1.0"
           :description "form handling for chabad on campus web projects"}
   hoplon {:manifest true})
