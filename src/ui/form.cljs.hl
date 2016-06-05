@@ -53,18 +53,18 @@
   (let [state (or state  *input-data*)]
     (div :class "checkbox"
       (hoplon.core/label (dissoc attr :state)
+        (input/checkbox :state state :disabled disabled)
         (span :class "switch"
-          (input/checkbox :state state :disabled disabled)
           (i))
         kids))))
 
 (defelem radio-block
-  [{:keys [state value disabled] :as attr} kids]
+  [{:keys [state value disabled name] :as attr} kids]
   (let [state (or state  *input-data*)]
-    (div :class "checkbox"
+    (div :class "radio"
       (hoplon.core/label (dissoc attr :state :value)
+        (input/radio :state state :value value :name name :disabled disabled)
         (span :class "switch"
-          (input/radio :state state :value value :disabled disabled)
           (i))
         kids))))
 
@@ -78,7 +78,7 @@
     (div :class "checkbox"
       (hoplon.core/label (dissoc attr :state :value)
         (span :class "switch"
-          (input/checkset :state state :value value) 
+          (input/checkset :state state :value value)
           (i))
         kids))))
 
