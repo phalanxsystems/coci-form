@@ -39,6 +39,10 @@
        ; resource path
        "(?:/\\S*)?"))
 
+(def ^:private email-regex
+       (str "(?i)"
+            "[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?"))
+
 (defmacro guard [& body]
   `(try ~@body (catch Throwable _#)))
 
@@ -62,6 +66,9 @@
 
 
 ;; validation test fns ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defvalidator email [x]
+  (and (string? x) (re-find (re-pattern email-regex) x))
+  "This field must be a valid email.")
 
 (defvalidator url [x]
   (and (string? x) (re-find (re-pattern url-regex) x))

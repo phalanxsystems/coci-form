@@ -25,7 +25,7 @@
   (reset    [this]))
 
 (defrecord FormMachine
-  [data error action callback state exception loading diff dirty?]
+  [data error action callback state exception loading diff dirty? analytics]
 
   IDeref
   (-deref [this]
@@ -84,7 +84,7 @@
                            (when (seq old) (data/diff old new))))))))
 
 (defn form-machine
-  [& {:keys [action schema current success]}]
+  [& {:keys [action schema current success analytics]}]
   (let [data (data-map schema current)
         diff (diff-cell schema current data)
         this {:data      data
