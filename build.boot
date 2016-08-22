@@ -14,9 +14,9 @@
 
 (task-options!
   push   {:repo "clojars-upload"}
-  pom    {:project 'coci/coci-form
+  pom    {:project 'rowtr/form
           :version "0.2.0"
-          :description "form handling for chabad on campus web projects"}
+          :description "form handling for web projects"}
   hoplon {:manifest true})
 
 (deftask build-jar
