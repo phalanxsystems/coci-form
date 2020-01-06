@@ -15,7 +15,7 @@
 
 (defelem checkbox
   [{:keys [state] :as attr} _]
-  (hoplon.core/input 
+  (hoplon.core/input
     (-> (dissoc attr :state)
         (assoc :type  "checkbox"
                :value state
@@ -33,6 +33,15 @@
                          (let [e (js/jQuery (.-target %))]
                            (swap! state (fnil (if (.is e ":checked") conj disj) #{}) @value)))))))
 
+(defelem textset
+  [{:keys [state value] :as attr} _]
+  (hoplon.core/input
+    (-> (dissoc attr :state :value))
+    (assoc :type "text"
+           :change #(with-let [_ 1]
+                      (let [e (js/jQuery (.-target %))]
+                        (swap! state (fnil conj #{}) @%))))))
+
 (defmethod do! :prop
   [elem _ m]
   (let [e (js/jQuery elem)]
@@ -43,7 +52,7 @@
 (defelem radio
   [{:keys [state value] :as attr} _]
   (let [value (cell= value)]
-    (hoplon.core/input 
+    (hoplon.core/input
       (-> (dissoc attr :state)
           (assoc :type  "radio"
                  :prop  (cell= {:checked (= (str state) (str value))})

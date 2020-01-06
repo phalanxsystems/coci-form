@@ -82,6 +82,11 @@
           (i))
         kids))))
 
+(defelem textset-block
+  [{:keys [state value] :as attr} kids]
+  (let [state   (or state *input-data*)]
+    (div (input/textset (dissoc attr :state :value)) kids)))
+
 (defelem panel
   [{:keys [heading] :as attr} kids]
   ((div :class "panel panel-default") (dissoc attr :heading)

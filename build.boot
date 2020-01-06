@@ -1,21 +1,15 @@
 (set-env!
   :resource-paths #{"src"}
-  :dependencies '[
-                  [hoplon/boot-hoplon                       "0.1.13"            :scope "test"]
-                  [adzerk/boot-cljs                         "1.7.170-3"         :scope "test"]
-                  [adzerk/env                               "0.2.0"]
-                  [hoplon/castra                            "3.0.0-alpha3"] ])
+  :dependencies '[[hoplon/hoplon                            "7.0.1"             :scope "test"]])
 
 (require
-  '[adzerk.env               :as    env]
-  '[adzerk.boot-cljs         :refer [cljs]]
-  '[hoplon.boot-hoplon       :refer [hoplon prerender]])
+  '[hoplon.boot-hoplon       :refer [hoplon]])
 
 
 (task-options!
   push   {:repo "clojars-upload"}
   pom    {:project 'rowtr/form
-          :version "0.2.0"
+          :version "0.2.5"
           :description "form handling for web projects"}
   hoplon {:manifest true})
 
